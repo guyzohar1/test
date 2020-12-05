@@ -1,0 +1,20 @@
+version: "3"
+
+services:
+    database:
+        image: mongo
+        container_name: guy_mongo
+        environment: 
+            - MONGO_INITDB_DATABASE=test_db
+            - MONGO_INITDB_ROOT_USERNAME=admin
+            - MONGO_INITDB_ROOT_PASSWORD=admin
+        volumes: 
+            - ./init-mongo.js:/docker-entrypoint-initdb.d/init-mongo-js:ro
+            - ./mongo-volume:/data/db
+        ports:
+            - "27017-27019:27017-27019"
+    web:
+        image: guy/node-web-app
+        container_name: guy_web_app
+        ports:
+            - 8080:8080
