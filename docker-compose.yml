@@ -13,8 +13,38 @@ services:
             - ./mongo-volume:/data/db
         ports:
             - "27017-27019:27017-27019"
+        healthcheck:
+            test:  ["CMD", "docker-healthcheck"]
+            interval: 10s
+            timeout: 2s
+            retries: 10
+    rabbitmq:
+        image: rabbitmq
+        container_name: guy_rabbitmq
+        volumes:
+            - ./.docker/rabbitmq/etc/:/etc/rabbitmq/
+            - ./.docker/rabbitmq/data/:/var/lib/rabbitmq/
+            - ./.docker/rabbitmq/logs/:/var/log/rabbitmq/
+        environment:
+            RABBITMQ_ERLANG_COOKIE: s3cr3tc00ki3
+            RABBITMQ_DEFAULT_USER: admin
+            RABBITMQ_DEFAULT_PASS: admin
+        ports:
+            - 5672:5672
+            - 15672:15672
+        healthcheck:
+            test: [ "CMD", "nc", "-z", "localhost", "5672" ]
+            interval: 10s
+            timeout: 10s
+            retries: 5
     web:
         image: guy/node-web-app
         container_name: guy_web_app
         ports:
             - 8080:8080
+        depends_on:
+            database:
+                condition: service_healthy
+            rabbitmq:
+                condition: service_healthy
+          

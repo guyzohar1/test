@@ -9,7 +9,10 @@
     },
     "dependencies": {
         "express": "^4.16.1",
+        "file-type": "latest",
         "mongodb": "latest",
-        "multer": "latest"
+        "mongoose": "latest",
+        "multer": "latest",
+        "amqplib": "latest"
     }
 }

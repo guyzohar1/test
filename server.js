@@ -5,25 +5,19 @@ const bodyParser = require('body-parser');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+var mongoose = require('mongoose');
+var http=require('http');
 
 
-const uri = "mongodb://admin:admin@127.0.0.1:27017/?authSource=admin&readPreference=primary&ssl=false";
+// Controllers
+var imageController = require('./controllers/image');
+//const uri = "mongodb://admin:admin@127.0.0.1:27017/?authSource=admin&readPreference=primary&ssl=false";
 
-async function con()
-{
-  try {
-    // Connect to the MongoDB cluster
-    var client = require('mongodb').MongoClient;
-    var db = await client.connect(uri);
-
-    var dbo = db.db("test_db");
-    await dbo.createCollection("images");
-    console.log("Collection created!");
-
-  } catch (e) {
-    console.error(e);
-  } 
-}
+mongoose.connect('mongodb://admin:admin@127.0.0.1:27017/test_db?authSource=admin');
+mongoose.connection.on('error', function(err) {
+  console.log('MongoDB Connection Error. Please make sure that MongoDB is running.'+err);
+  process.exit(1);
+});
 
 
 // Constants
@@ -46,71 +40,17 @@ const storage = multer.diskStorage({
       cb(null, file.originalname);
   }
 });
-
 const upload = multer({storage: storage});
 
 app.get('/Hello', (req, res) => {
   res.send('Hello');
 });
 
-app.post('/LoadImage',upload.single('pic'), async(req, res) => {
 
-  if (!req.file) {
-      return res.send('Please select an image to upload');
-  }
-  
-  try{
-    var client = require('mongodb').MongoClient;
-    var db = await client.connect(uri);
+app.get('/view',  imageController.imageGet);
+app.post('/upload',upload.single('pic'),imageController.uploadPhoto);
+app.delete('/del', imageController.uploadPhoto);
 
-    var dbo = db.db("test_db");
-    var myobj = { name:req.file.originalname, location: "public/" + req.file.originalname };
-    await dbo.collection("Images").insertOne(myobj);
-    res.send("Image " + req.file.originalname  + " inserted");
-  } catch (e) {
-    res.send("Unable to load image name");
-  } 
-});
-
-app.get('/ViewImages', async (req, res) => {
-  var client = require('mongodb').MongoClient;
-
-  try
-  {
-    var db = await client.connect(uri);
-
-    var dbo = db.db("test_db");
-    var images = await dbo.collection("Images").find().toArray();
-    res.send(images);
-  } catch (e) {
-    res.send("Unable to get images name");
-  } 
-
-});
-
-app.delete('/DelImage', async (req, res) => {
-
-  var req_name = params.name;
-  try {
-    fs.unlinkSync(params.name);
-  } catch (err) {
-    res.send("File not exists")
-  }
-
-  try{
-    var client = require('mongodb').MongoClient;
-    var db = await client.connect(uri);
-
-    var dbo = db.db("test_db");
-    var myobj = { name: params.name};
-    await dbo.collection("Images").deleteOne(myobj);
-    res.send("Image " +params.name + " deleted");
-  } catch (e) {
-    res.send("Unable to Del image name");
-  } 
-  
-  
-});
 
 app.listen(PORT, HOST);
 console.log(`Running on http://${HOST}:${PORT}`);
